@@ -112,6 +112,12 @@ namespace LeaderElectionRun.KServices
 			}
 		}
 
+		public Process Test( string ExecPath )
+		{
+			ExecEventArgs e = new();
+			return Exec( ExecPath, e );
+		}
+
 		private void Elector_OnStartedLeading()
 		{
 			Logger.LogInformation( $"Started Leading: {Id}" );
@@ -130,10 +136,10 @@ namespace LeaderElectionRun.KServices
 			Exec( ExecElect, new ExecEventArgs() { Id = Id, LeaderId = LeaderId } );
 		}
 
-		private void Exec( string ExecPath, ExecEventArgs e )
+		private Process Exec( string ExecPath, ExecEventArgs e )
 		{
 			if ( string.IsNullOrEmpty( ExecPath ) )
-				return;
+				return null;
 
 			try
 			{
@@ -142,14 +148,24 @@ namespace LeaderElectionRun.KServices
 			catch( Exception Ex )
 			{
 				Logger.LogError( Ex, $"Failed to format command: {ExecPath}" );
-				return;
+				return null;
 			}
 
 			try
 			{
 				Logger.LogInformation( $"Exec: {ExecPath}" );
 				IEnumerator<string> Args = ExecPath.SplitArgs().GetEnumerator();
-				Process P = Process.Start( Args.First(), Args.Rests() );
+				ProcessStartInfo PStart = new ProcessStartInfo( Args.First() );
+				foreach ( string s in Args.Rests() )
+					PStart.ArgumentList.Add( s );
+
+				PStart.CreateNoWindow = true;
+				PStart.UseShellExecute = false;
+				PStart.RedirectStandardOutput = true;
+				PStart.RedirectStandardError = true;
+
+				Process P = new Process() { StartInfo = PStart };
+
 				P.EnableRaisingEvents = true;
 				P.Exited += ( object sender, EventArgs e ) =>
 				{
@@ -159,12 +175,34 @@ namespace LeaderElectionRun.KServices
 						Logger.LogError( $"Command exit with code {P.ExitCode}: {ExecPath}" );
 					}
 				};
+
+				P.OutputDataReceived += P_OutputDataReceived;
+				P.ErrorDataReceived += P_ErrorDataReceived;
+				P.Start();
+				P.BeginErrorReadLine();
+				P.BeginOutputReadLine();
+				return P;
 			}
 			catch ( Exception Ex )
 			{
 				Logger.LogError( Ex, $"Failed to exec: {ExecPath}" );
 			}
+
+			return null;
 		}
 
+		private void P_ErrorDataReceived( object sender, DataReceivedEventArgs e )
+		{
+			if ( e.Data == null )
+				return;
+			KLog.GetLogger<Process>().LogError( e.Data );
+		}
+
+		private void P_OutputDataReceived( object sender, DataReceivedEventArgs e )
+		{
+			if ( e.Data == null )
+				return;
+			KLog.GetLogger<Process>().LogInformation( e.Data );
+		}
 	}
 }

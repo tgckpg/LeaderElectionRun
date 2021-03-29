@@ -20,14 +20,17 @@ namespace LeaderElectionRun
 			[Option( 'i', "identity", Required = false, HelpText = "The leader identity, defaults to Environment::HOSTNAME" )]
 			public string Identity { get; set; } = Environment.GetEnvironmentVariable( "HOSTNAME" );
 
-			[Option( 'x', "stop", Required = false, HelpText = "Process to run when stopped leading" )]
-			public string OnStopExec { get; set; }
+			[Option( 'e', "elect", Required = false, HelpText = "Process to run when a new leader is elected" )]
+			public string OnElectExec { get; set; }
 
 			[Option( 's', "start", Required = false, HelpText = "Process to run when started leading" )]
 			public string OnStartExec { get; set; }
 
-			[Option( 'e', "elect", Required = false, HelpText = "Process to run when a new leader is elected" )]
-			public string OnElectExec { get; set; }
+			[Option( 'x', "stop", Required = false, HelpText = "Process to run when stopped leading" )]
+			public string OnStopExec { get; set; }
+
+			[Option( 't', "test", Required = false, HelpText = "Test run commands, in the order of -e -s -x." )]
+			public bool Test { get; set; }
 		}
 
 		static void Main( string[] args )
@@ -51,6 +54,15 @@ namespace LeaderElectionRun
 				ExecStart = Opt.OnStartExec,
 				ExecStop = Opt.OnStopExec
 			};
+
+			if( Opt.Test )
+			{
+				Console.WriteLine( "Test mode" );
+				Instance.Test( Instance.ExecElect )?.WaitForExit();
+				Instance.Test( Instance.ExecStart )?.WaitForExit();
+				Instance.Test( Instance.ExecStop )?.WaitForExit();
+				Environment.Exit( 0 );
+			}
 
 			if ( string.IsNullOrEmpty( Opt.PIdFile ) )
 			{

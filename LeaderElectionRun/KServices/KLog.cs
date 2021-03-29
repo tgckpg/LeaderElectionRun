@@ -34,13 +34,21 @@ namespace LeaderElectionRun.KServices
 			{ LogLevel.Warning, "WARN" },
 		};
 
+		public string Cat { get; set; }
+
 		public IDisposable BeginScope<TState>( TState state ) => default;
 
 		public bool IsEnabled( LogLevel logLevel )
 			=> true;
 
 		public void Log<TState>( LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter )
-			=> Console.WriteLine( $"[{DateTime.Now:dd-MM-yyyy HH:mm:ss}][{LogLevelMap[ logLevel ]}] {formatter( state, exception )}" );
+		{
+			Console.WriteLine( $"[{DateTime.Now:dd-MM-yyyy HH:mm:ss}][{Cat}][{LogLevelMap[ logLevel ]}] {formatter( state, exception )}" );
+			if( exception != null )
+			{
+				Console.WriteLine( exception );
+			}
+		}
 	}
 
 	class KLogProvider : ILoggerProvider
@@ -48,7 +56,7 @@ namespace LeaderElectionRun.KServices
 		private readonly ConcurrentDictionary<string, KLogger> _Loggers = new();
 
 		public ILogger CreateLogger( string Cat )
-			=> _Loggers.GetOrAdd( Cat, new KLogger() );
+			=> _Loggers.GetOrAdd( Cat, new KLogger() { Cat = Cat.Split( '.' ).Last() } );
 
 		public void Dispose()
 			=> _Loggers.Clear();
