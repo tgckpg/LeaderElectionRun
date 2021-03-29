@@ -75,6 +75,18 @@ namespace LeaderElectionRun.KServices
 					using StreamReader S2 = new( S );
 					PId = int.Parse( S2.ReadLine() );
 				}
+				catch ( FormatException ex )
+				{
+					Logger.LogError( $"Invalid pid: {ex.Message}" );
+					Thread.Sleep( 2000 );
+					continue;
+				}
+				catch ( ArgumentNullException )
+				{
+					Logger.LogError( $"Unable to get the pid from file: {PIdFile}" );
+					Thread.Sleep( 2000 );
+					continue;
+				}
 				catch ( AccessViolationException )
 				{
 					Logger.LogError( $"Access denied while reading: {PIdFile}" );
