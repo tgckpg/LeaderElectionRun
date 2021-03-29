@@ -25,7 +25,7 @@ namespace LeaderElectionRun.KServices
 		private readonly LeaderElector Elector;
 		private readonly ILogger Logger;
 
-		public KStart( string Namespace, string LockName, string Id )
+		public KStart( string Namespace, string LockName, string Id, double LeaseDuration, double RetryPeriod )
 		{
 			Logger = KLog.GetLogger<KStart>();
 
@@ -37,8 +37,8 @@ namespace LeaderElectionRun.KServices
 			EndpointsLock EndPointLock = new( Kube, Namespace, LockName, Id );
 			Elector = new( new LeaderElectionConfig( EndPointLock )
 			{
-				LeaseDuration = TimeSpan.FromSeconds( 5 ),
-				RetryPeriod = TimeSpan.FromSeconds( 5 )
+				LeaseDuration = TimeSpan.FromSeconds( LeaseDuration ),
+				RetryPeriod = TimeSpan.FromSeconds( RetryPeriod )
 			} );
 
 			Elector.OnStartedLeading += Elector_OnStartedLeading;
@@ -103,7 +103,7 @@ namespace LeaderElectionRun.KServices
 				}
 				catch ( FileNotFoundException )
 				{
-					Logger.LogWarning( $"Waiting for file: {PIdFile}" );
+					Logger.LogInformation( $"Waiting for file: {PIdFile}" );
 					Thread.Sleep( 2000 );
 					continue;
 				}
@@ -128,7 +128,7 @@ namespace LeaderElectionRun.KServices
 					TokenSource.Cancel();
 				}
 
-				Logger.LogInformation( $"Stopped. Process exited." );
+				Logger.LogInformation( $"Monitor: {P.ProcessName}, PID: {PId} has exited." );
 			}
 		}
 

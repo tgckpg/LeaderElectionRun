@@ -29,8 +29,15 @@ namespace LeaderElectionRun
 			[Option( 'x', "stop", Required = false, HelpText = "Process to run when stopped leading" )]
 			public string OnStopExec { get; set; }
 
+			[Option( 'l', "lease", Required = false, HelpText = "The duration that non-leader candidates will wait to force acquire leadership. In seconds. Default is 10." )]
+			public double LeaseDuration { get; set; } = 10;
+
+			[Option( 'r', "retry", Required = false, HelpText = "The duration the clients should wait between tries of actions. In seconds. Default is 2." )]
+			public double RetryPeriod { get; set; } = 2;
+
 			[Option( 't', "test", Required = false, HelpText = "Test run commands, in the order of -e -s -x." )]
 			public bool Test { get; set; }
+
 		}
 
 		static void Main( string[] args )
@@ -48,7 +55,7 @@ namespace LeaderElectionRun
 				Environment.Exit( 1 );
 			}
 
-			KStart Instance = new( Opt.Namespace, Opt.LockName, Opt.Identity )
+			KStart Instance = new( Opt.Namespace, Opt.LockName, Opt.Identity, Opt.LeaseDuration, Opt.RetryPeriod )
 			{
 				ExecElect = Opt.OnElectExec,
 				ExecStart = Opt.OnStartExec,
