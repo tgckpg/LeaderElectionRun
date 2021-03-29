@@ -32,7 +32,9 @@ namespace LeaderElectionRun
 
 		static void Main( string[] args )
 		{
-			Parser.Default.ParseArguments<Options>( args ).WithParsed( Start );
+			Parser.Default.ParseArguments<Options>( args )
+				.WithParsed( Start )
+				.WithNotParsed( x => Environment.Exit( ( x.IsVersion() || x.IsHelp() ) ? 0 : 1 ) );
 		}
 
 		private static void Start( Options Opt )
