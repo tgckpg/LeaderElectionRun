@@ -41,9 +41,9 @@ namespace LeaderElectionRun.KServices
 				RetryPeriod = TimeSpan.FromSeconds( 5 )
 			} );
 
-			Elector.OnNewLeader += Elector_OnNewLeader;
 			Elector.OnStartedLeading += Elector_OnStartedLeading;
 			Elector.OnStoppedLeading += Elector_OnStoppedLeading;
+			Elector.OnNewLeader += Elector_OnNewLeader;
 		}
 
 		public void Start()
@@ -55,7 +55,15 @@ namespace LeaderElectionRun.KServices
 				using ( CancellationTokenSource TokenSource = new() )
 				{
 					_ = Elector.RunAsync( TokenSource.Token );
-					Console.ReadKey( true );
+					try
+					{
+						Console.ReadKey( true );
+					}
+					catch ( InvalidOperationException )
+					{
+						Logger.LogWarning( "No console input. Disabling manual key-stop feature" );
+						break;
+					}
 					TokenSource.Cancel();
 				}
 
@@ -167,7 +175,7 @@ namespace LeaderElectionRun.KServices
 			{
 				Logger.LogInformation( $"Exec: {ExecPath}" );
 				IEnumerator<string> Args = ExecPath.SplitArgs().GetEnumerator();
-				ProcessStartInfo PStart = new ProcessStartInfo( Args.First() );
+				ProcessStartInfo PStart = new( Args.First() );
 				foreach ( string s in Args.Rests() )
 					PStart.ArgumentList.Add( s );
 
@@ -176,20 +184,33 @@ namespace LeaderElectionRun.KServices
 				PStart.RedirectStandardOutput = true;
 				PStart.RedirectStandardError = true;
 
-				Process P = new Process() { StartInfo = PStart };
+				Process P = new() { StartInfo = PStart };
 
 				P.EnableRaisingEvents = true;
 				P.Exited += ( object sender, EventArgs e ) =>
 				{
-					Process P = ( Process ) sender;
-					if ( P.ExitCode != 0 )
+					if ( P.ExitCode == 0 )
 					{
-						Logger.LogError( $"Command exit with code {P.ExitCode}: {ExecPath}" );
+						Logger.LogInformation( $"Process completed successfully: {ExecPath}" );
+					}
+					else
+					{
+						Logger.LogError( $"Process exited with code {P.ExitCode}: {ExecPath}" );
 					}
 				};
-
-				P.OutputDataReceived += P_OutputDataReceived;
-				P.ErrorDataReceived += P_ErrorDataReceived;
+				P.OutputDataReceived += ( object sender, DataReceivedEventArgs e ) =>
+				{
+					if ( e.Data == null )
+						return;
+					KLog.GetLogger<Process>().LogInformation( $"{PStart.FileName}: {e.Data}" );
+				};
+				P.ErrorDataReceived += ( object sender, DataReceivedEventArgs e ) =>
+				{
+					if ( e.Data == null )
+						return;
+					KLog.GetLogger<Process>().LogError( $"{P.StartInfo.FileName}: {e.Data}" );
+				};
+;
 				P.Start();
 				P.BeginErrorReadLine();
 				P.BeginOutputReadLine();
@@ -203,18 +224,5 @@ namespace LeaderElectionRun.KServices
 			return null;
 		}
 
-		private void P_ErrorDataReceived( object sender, DataReceivedEventArgs e )
-		{
-			if ( e.Data == null )
-				return;
-			KLog.GetLogger<Process>().LogError( e.Data );
-		}
-
-		private void P_OutputDataReceived( object sender, DataReceivedEventArgs e )
-		{
-			if ( e.Data == null )
-				return;
-			KLog.GetLogger<Process>().LogInformation( e.Data );
-		}
 	}
 }
