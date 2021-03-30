@@ -132,9 +132,9 @@ namespace LeaderElectionRun.KServices
 			}
 		}
 
-		public Process Test( string ExecPath )
+		public Process Exec( string ExecPath )
 		{
-			ExecEventArgs e = new();
+			ExecEventArgs e = new() { Id = Id };
 			return Exec( ExecPath, e );
 		}
 
@@ -210,7 +210,7 @@ namespace LeaderElectionRun.KServices
 						return;
 					KLog.GetLogger<Process>().LogError( $"{P.StartInfo.FileName}: {e.Data}" );
 				};
-;
+
 				P.Start();
 				P.BeginErrorReadLine();
 				P.BeginOutputReadLine();

@@ -65,11 +65,16 @@ namespace LeaderElectionRun
 			if( Opt.Test )
 			{
 				Console.WriteLine( "Test mode" );
-				Instance.Test( Instance.ExecElect )?.WaitForExit();
-				Instance.Test( Instance.ExecStart )?.WaitForExit();
-				Instance.Test( Instance.ExecStop )?.WaitForExit();
+				Instance.Exec( Instance.ExecElect )?.WaitForExit();
+				Instance.Exec( Instance.ExecStart )?.WaitForExit();
+				Instance.Exec( Instance.ExecStop )?.WaitForExit();
 				Environment.Exit( 0 );
 			}
+
+			AppDomain.CurrentDomain.ProcessExit += ( object sender, EventArgs e ) =>
+			{
+				Instance.Exec( Instance.ExecStop )?.WaitForExit();
+			};
 
 			if ( string.IsNullOrEmpty( Opt.PIdFile ) )
 			{
