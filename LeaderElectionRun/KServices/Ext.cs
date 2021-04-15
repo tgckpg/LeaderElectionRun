@@ -86,5 +86,17 @@ namespace LeaderElectionRun.KServices
 			return Enumerator.Current;
 		}
 
+		public static void Deconstruct<T>( this IList<T> Items, out T T0 ) => T0 = Items[ 0 ];
+		public static void Deconstruct<T>( this IList<T> Items, out T T0, out T T1 )
+		{
+			T0 = Items[ 0 ];
+			T1 = Items[ 1 ];
+		}
+		public static void Deconstruct<T>( this IList<T> Items, out T T0, out T T1, out T T2 )
+		{
+			T0 = Items[ 0 ];
+			T1 = Items[ 1 ];
+			T2 = Items[ 2 ];
+		}
 	}
 }

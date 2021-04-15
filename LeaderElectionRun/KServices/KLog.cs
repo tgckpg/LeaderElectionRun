@@ -43,7 +43,7 @@ namespace LeaderElectionRun.KServices
 
 		public void Log<TState>( LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter )
 		{
-			Console.WriteLine( $"[{DateTime.Now:dd-MM-yyyy HH:mm:ss}][{Cat}][{LogLevelMap[ logLevel ]}] {formatter( state, exception )}" );
+			Console.WriteLine( $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}][{Cat}][{LogLevelMap[ logLevel ]}] {formatter( state, exception )}" );
 			if( exception != null )
 			{
 				Console.WriteLine( exception );

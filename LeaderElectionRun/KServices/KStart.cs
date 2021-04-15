@@ -2,6 +2,7 @@
 using k8s;
 using k8s.LeaderElection;
 using k8s.LeaderElection.ResourceLock;
+using k8s.Models;
 using LeaderElectionRun.KServices.ABIObjects;
 using Microsoft.Extensions.Logging;
 using System;
@@ -21,21 +22,23 @@ namespace LeaderElectionRun.KServices
 		public string ExecStart { get; set; }
 		public string ExecStop { get; set; }
 		public string ExecElect { get; set; }
+		public string Endpoints { get; set; }
 
 		private readonly LeaderElector Elector;
 		private readonly ILogger Logger;
+		private readonly Kubernetes Kube;
 
 		public KStart( string Namespace, string LockName, string Id, double LeaseDuration, double RetryPeriod )
 		{
 			Logger = KLog.GetLogger<KStart>();
+			Kube = new( KubernetesClientConfiguration.BuildDefaultConfig() );
 
 			this.Namespace = Namespace;
 			this.Id = Id;
 			this.LockName = LockName;
 
-			Kubernetes Kube = new( KubernetesClientConfiguration.BuildDefaultConfig() );
-			EndpointsLock EndPointLock = new( Kube, Namespace, LockName, Id );
-			Elector = new( new LeaderElectionConfig( EndPointLock )
+			EndpointsLock EndpointLock = new( Kube, Namespace, LockName, Id );
+			Elector = new( new LeaderElectionConfig( EndpointLock )
 			{
 				LeaseDuration = TimeSpan.FromSeconds( LeaseDuration ),
 				RetryPeriod = TimeSpan.FromSeconds( RetryPeriod )
@@ -55,6 +58,7 @@ namespace LeaderElectionRun.KServices
 				using ( CancellationTokenSource TokenSource = new() )
 				{
 					_ = Elector.RunAsync( TokenSource.Token );
+					UpdateEndpoints();
 					try
 					{
 						Console.ReadKey( true );
@@ -124,6 +128,7 @@ namespace LeaderElectionRun.KServices
 				using ( CancellationTokenSource TokenSource = new() )
 				{
 					_ = Elector.RunAsync( TokenSource.Token );
+					UpdateEndpoints();
 					P.WaitForExit();
 					TokenSource.Cancel();
 				}
@@ -136,6 +141,48 @@ namespace LeaderElectionRun.KServices
 		{
 			ExecEventArgs e = new() { Id = Id };
 			return Exec( ExecPath, e );
+		}
+
+		private async void UpdateEndpoints()
+		{
+			if ( string.IsNullOrEmpty( Endpoints ) )
+				return;
+
+			string Name, Addr, Port;
+
+			try
+			{
+				(Name, Addr, Port) = Endpoints.Split( ':' );
+			}
+			catch ( Exception ex )
+			{
+				Logger.LogError( ex, ex.Message );
+				return;
+			}
+
+			Logger.LogInformation( $"Update Endpoints: {Name} -> {Addr}:{Port}" );
+
+			V1Endpoints v1Endpoints = new()
+			{
+				Metadata = new() { Name = Name, NamespaceProperty = Namespace },
+				Subsets = new[]
+				{
+					new V1EndpointSubset()
+					{
+						Addresses = new[] { new V1EndpointAddress( Addr ) },
+						Ports = new[] { new V1EndpointPort( int.Parse( Port ) ) }
+					}
+				}
+			};
+
+			try
+			{
+				await Kube.ReplaceNamespacedEndpointsAsync( v1Endpoints, Name, Namespace );
+			}
+			catch ( Exception ex )
+			{
+				Logger.LogError( ex, ex.Message );
+			}
 		}
 
 		private void Elector_OnStartedLeading()

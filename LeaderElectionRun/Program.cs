@@ -17,16 +17,19 @@ namespace LeaderElectionRun
 			[Option( 'm', "shared-lock", Required = true, HelpText = "The name of the shared lock" )]
 			public string LockName { get; set; }
 
+			[Option( 'E', "endpoints-name", HelpText = "[endpoint-name]:[address]:[port], sets endpoints after leading started." )]
+			public string Endpoints { get; set; }
+
 			[Option( 'i', "identity", Required = false, HelpText = "The leader identity, defaults to Environment::HOSTNAME" )]
 			public string Identity { get; set; } = Environment.GetEnvironmentVariable( "HOSTNAME" );
 
 			[Option( 'e', "elect", Required = false, HelpText = "Process to run when a new leader is elected" )]
 			public string OnElectExec { get; set; }
 
-			[Option( 's', "start", Required = false, HelpText = "Process to run when started leading" )]
+			[Option( 's', "start", Required = false, HelpText = "Process to run when leading started" )]
 			public string OnStartExec { get; set; }
 
-			[Option( 'x', "stop", Required = false, HelpText = "Process to run when stopped leading" )]
+			[Option( 'x', "stop", Required = false, HelpText = "Process to run when leading stopped" )]
 			public string OnStopExec { get; set; }
 
 			[Option( 'l', "lease", Required = false, HelpText = "The duration that non-leader candidates will wait to force acquire leadership. In seconds. Default is 10." )]
@@ -59,7 +62,8 @@ namespace LeaderElectionRun
 			{
 				ExecElect = Opt.OnElectExec,
 				ExecStart = Opt.OnStartExec,
-				ExecStop = Opt.OnStopExec
+				ExecStop = Opt.OnStopExec,
+				Endpoints = Opt.Endpoints
 			};
 
 			if( Opt.Test )
