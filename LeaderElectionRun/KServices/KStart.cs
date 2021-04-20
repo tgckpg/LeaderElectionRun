@@ -58,7 +58,6 @@ namespace LeaderElectionRun.KServices
 				using ( CancellationTokenSource TokenSource = new() )
 				{
 					_ = Elector.RunAsync( TokenSource.Token );
-					UpdateEndpoints();
 					try
 					{
 						Console.ReadKey( true );
@@ -128,7 +127,6 @@ namespace LeaderElectionRun.KServices
 				using ( CancellationTokenSource TokenSource = new() )
 				{
 					_ = Elector.RunAsync( TokenSource.Token );
-					UpdateEndpoints();
 					P.WaitForExit();
 					TokenSource.Cancel();
 				}
@@ -188,6 +186,7 @@ namespace LeaderElectionRun.KServices
 		private void Elector_OnStartedLeading()
 		{
 			Logger.LogInformation( $"Started Leading: {Id}" );
+			UpdateEndpoints();
 			Exec( ExecStart, new ExecEventArgs() { Id = Id } );
 		}
 
