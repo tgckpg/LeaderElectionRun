@@ -28,7 +28,7 @@ namespace LeaderElectionRun.KServices
 		private readonly ILogger Logger;
 		private readonly Kubernetes Kube;
 
-		public KStart( string Namespace, string LockName, string Id, double LeaseDuration, double RetryPeriod )
+		public KStart( string Namespace, string LockName, string Id, double LeaseDuration, double RetryPeriod, double RenewDeadline )
 		{
 			Logger = KLog.GetLogger<KStart>();
 			Kube = new( KubernetesClientConfiguration.BuildDefaultConfig() );
@@ -41,7 +41,8 @@ namespace LeaderElectionRun.KServices
 			Elector = new( new LeaderElectionConfig( EndpointLock )
 			{
 				LeaseDuration = TimeSpan.FromSeconds( LeaseDuration ),
-				RetryPeriod = TimeSpan.FromSeconds( RetryPeriod )
+				RetryPeriod = TimeSpan.FromSeconds( RetryPeriod ),
+				RenewDeadline = TimeSpan.FromSeconds( RenewDeadline ),
 			} );
 
 			Elector.OnStartedLeading += Elector_OnStartedLeading;
@@ -168,7 +169,7 @@ namespace LeaderElectionRun.KServices
 					new V1EndpointSubset()
 					{
 						Addresses = new[] { new V1EndpointAddress( Addr ) },
-						Ports = new[] { new V1EndpointPort( int.Parse( Port ) ) }
+						Ports = new[] { new Corev1EndpointPort( int.Parse( Port ) ) }
 					}
 				}
 			};

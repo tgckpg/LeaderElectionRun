@@ -38,6 +38,9 @@ namespace LeaderElectionRun
 			[Option( 'r', "retry", Required = false, HelpText = "The duration the clients should wait between tries of actions. In seconds. Default is 2." )]
 			public double RetryPeriod { get; set; } = 2;
 
+			[Option( 'd', "renew-deadline", Required = false, HelpText = "The duration that the acting master will retry refreshing leadership before giving up. In seconds. Default is 10."  )]
+			public double RenewDeadline { get; set; } = 10;
+
 			[Option( 't', "test", Required = false, HelpText = "Test run commands, in the order of -e -s -x." )]
 			public bool Test { get; set; }
 
@@ -58,7 +61,7 @@ namespace LeaderElectionRun
 				Environment.Exit( 1 );
 			}
 
-			KStart Instance = new( Opt.Namespace, Opt.LockName, Opt.Identity, Opt.LeaseDuration, Opt.RetryPeriod )
+			KStart Instance = new( Opt.Namespace, Opt.LockName, Opt.Identity, Opt.LeaseDuration, Opt.RetryPeriod, Opt.RenewDeadline )
 			{
 				ExecElect = Opt.OnElectExec,
 				ExecStart = Opt.OnStartExec,
