@@ -24,7 +24,7 @@ namespace LeaderElectionRun.KServices
 		public string ExecElect { get; set; }
 		public string Endpoints { get; set; }
 
-		private readonly LeaderElector Elector;
+		private readonly KElector Elector;
 		private readonly ILogger Logger;
 		private readonly Kubernetes Kube;
 
