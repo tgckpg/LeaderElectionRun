@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace LeaderElectionRun.KServices
 {
 	// Extracted from https://github.com/kubernetes-client/csharp/blob/4db390f3afbf93256b1ed954db1db20f2b2b1839/src/KubernetesClient/LeaderElection/LeaderElector.cs
-	// Applied patches for issue #841, #842
+	// Applied patches for issue #842
 	public class KElector : IDisposable
 	{
 		private const double JitterFactor = 1; // Issue #842
@@ -140,7 +140,7 @@ namespace LeaderElectionRun.KServices
 			}
 
 			// 2. Record obtained, check the Identity & Time
-			if ( IsModified( observedRecord, oldLeaderElectionRecord ) ) // Issue #841
+			if ( !Equals( observedRecord, oldLeaderElectionRecord ) )
 			{
 				observedRecord = oldLeaderElectionRecord;
 				observedTime = DateTimeOffset.Now;
@@ -176,18 +176,6 @@ namespace LeaderElectionRun.KServices
 			observedTime = DateTimeOffset.Now;
 
 			return true;
-		}
-
-		private bool IsModified( LeaderElectionRecord observedRecord, LeaderElectionRecord oldLeaderElectionRecord )
-		{
-			if ( observedRecord == null )
-				return true;
-
-			return !(
-				observedRecord.AcquireTime == oldLeaderElectionRecord.AcquireTime
-				&& observedRecord.RenewTime == oldLeaderElectionRecord.RenewTime
-				&& observedRecord.HolderIdentity == oldLeaderElectionRecord.HolderIdentity
-			);
 		}
 
 		private async Task AcquireAsync( CancellationToken cancellationToken )
